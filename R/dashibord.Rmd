@@ -1,0 +1,98 @@
+---
+title: "Sangue do Dashbord Fantasma"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(DT)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(tidyquant)
+prices <- read.csv("C:/Users/win7/Desktop/programas em R/FlexivelPranchaDeDash/prices.csv")%>%
+  mutate(date = as.Date(date))
+
+tabela_periodo <- data.frame(
+  periodo = c("1M", "6M", "1A", "10A"),
+  dias = c(30, 180, 365, 3650)
+)
+```
+
+row {.sidebar}
+-------------------------------------------------------------------------------------------
+```{r}
+selectInput(
+  "odio", label = "Escolher sua Ação",
+  choices= c(
+    "RRRP3", "ABEV3", "ASAI3", "BPAN4", "BPAC11", "CCRO3",
+    "GGBR4", "ENEV3", "ENGI11", "EMBR3", "ENBR3", "FLRY3"
+))
+selectInput(
+  "periodo", label = " Escolha o Periodo", 
+  choices= c("1M", "6M", "1A", "10A")
+  )
+```
+row {data-width=250}
+-----------------------------------------------------------------------
+
+### Tendência "de batalha" de Ações
+
+```{r}
+renderPlotly({
+  periodo <- Sys.Date() - filter(tabela_periodo, periodo == input$periodo)$dias
+  prices %>%
+    filter(date >= periodo, symbol == input$odio) %>%
+    ggplot() +
+    aes(x= date, y = adjusted)
+    geom_line() +
+    labs(x = "", y = "Cotação") +
+    ggtitle(label = input$acao) +
+    theme(
+      panel.background = element_blank(),
+      plot.title = element_text(size= 22)
+    )
+})
+
+
+```
+
+
+### Todas as Tendências "de batalhas" de Ações
+
+```{r}
+renderPlotly({
+  periodo <- Sys.Date() - filter(tabela_periodo, periodo == input$periodo)$dias
+  prices %>%
+    filter(date >= periodo) %>%
+     ggplot() +
+    aes(x= date, y = adjusted, color = symbol) +
+    geom_line(size= 1.1) +
+    labs(x = "", y = "Cotação", color = "Ação") +
+    theme(
+      panel.background = element_blank())
+})
+   
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+### Cotação Creuzadora da Poeira Estelar
+
+```{r}
+renderDataTable({
+ periodo <- Sys.Date() - filter(tabela_periodo, periodo == input$periodo)$dias
+  prices %>%
+    filter(date >= periodo, symbol == input$odio) %>%
+    arrange(desc(date)) %>%
+    datatable(rownames = FALSE)
+
+  
+})
+```
+
